@@ -263,6 +263,7 @@ class CPU:
                 reg_index = self.ram[self.pc+1]
                 value = self.reg[reg_index]
                 print(bin(value))
+                # print(value)
 
                 op_size = 2
 
