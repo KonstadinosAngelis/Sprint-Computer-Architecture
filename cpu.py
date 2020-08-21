@@ -14,15 +14,25 @@ class CPU:
         self.running = False
         self.pc = 0
         self.sp = 7
-        self.HLT = 0b00000001
-        self.LDI = 0b10000010
-        self.PRN = 0b01000111
+
         self.ADD = 0b10100000
         self.SUB = 0b10100001
         self.MUL = 0b10100010
         self.DIV = 0b10100011
         self.CMP = 0b10100111
-        self.ALU = [self.ADD, self.SUB, self.MUL, self.DIV, self.CMP]
+        self.AND = 0b10101000
+        self.OR = 0b10101010
+        self.XOR = 0b10101011
+        self.NOT = 0b01101001
+        self.SHL = 0b10101100
+        self.SHR = 0b10101101
+        self.MOD = 0b10100100
+        self.ALU = [self.ADD, self.SUB, self.MUL, self.DIV, self.CMP, self.AND,
+                    self.OR, self.XOR, self.NOT, self.NOT, self.SHL, self.SHR, self.MOD]
+
+        self.HLT = 0b00000001
+        self.LDI = 0b10000010
+        self.PRN = 0b01000111
         self.POP = 0b01000110
         self.PUSH = 0b01000101
         self.CALL = 0b01010000
@@ -72,7 +82,7 @@ class CPU:
         #     self.ram[address] = instruction
         #     address += 1
 
-    def alu(self, op, reg_a, reg_b):
+    def alu(self, op, reg_a, reg_b=0):
         """ALU operations."""
 
         if op == self.ADD:
@@ -83,6 +93,113 @@ class CPU:
             self.reg[reg_a] *= self.reg[reg_b]
         elif op == self.DIV:
             self.reg[reg_a] /= self.reg[reg_b]
+        elif op == self.MOD:
+            self.reg[reg_a] %= self.reg[reg_b]
+        elif op == self.SHL:
+            self.reg[reg_a] <<= self.reg[reg_b]
+        elif op == self.SHR:
+            self.reg[reg_a] >>= self.reg[reg_b]
+
+        elif op == self.NOT:
+            value = self.reg[reg_a]
+
+            string = str(bin(value))
+
+            new_string = "0b"
+            for i in range(2, len(string)):
+                if string[i] == "1":
+                    new_string += "0"
+                else:
+                    new_string += "1"
+
+            value = int(new_string, 2)
+
+            self.reg[reg_a] = value
+
+        elif op == self.AND:
+            value_a = self.reg[reg_a]
+            value_b = self.reg[reg_b]
+
+            string_a = str(bin(value_a))
+            string_b = str(bin(value_b))
+
+            if len(string_a) > len(string_b):
+                difference = len(string_a) - len(string_b)
+                string_b = "0b" + '1'*difference + string_b[2:]
+                string_a = "0b" + '0'*difference + string_a[2+difference:]
+            else:
+                difference = len(string_b) - len(string_a)
+                string_a = "0b" + '1'*difference + string_a[2:]
+                string_b = "0b" + '0'*difference + string_b[2+difference:]
+
+            new_string = "0b"
+
+            for i in range(2, len(string_a)):
+                if string_a[i] == "1" and string_b[i] == "1":
+                    new_string += "1"
+                else:
+                    new_string += "0"
+
+            value = int(new_string, 2)
+
+            self.reg[reg_a] = value
+
+        elif op == self.OR:
+            value_a = self.reg[reg_a]
+            value_b = self.reg[reg_b]
+
+            string_a = str(bin(value_a))
+            string_b = str(bin(value_b))
+
+            if len(string_a) > len(string_b):
+                difference = len(string_a) - len(string_b)
+                string_b = "0b" + '1'*difference + string_b[2:]
+                string_a = "0b" + '0'*difference + string_a[2+difference:]
+            else:
+                difference = len(string_b) - len(string_a)
+                string_a = "0b" + '1'*difference + string_a[2:]
+                string_b = "0b" + '0'*difference + string_b[2+difference:]
+
+            new_string = "0b"
+
+            for i in range(2, len(string_a)):
+                if string_a[i] == "1" or string_b[i] == "1":
+                    new_string += "1"
+                else:
+                    new_string += "0"
+
+            value = int(new_string, 2)
+
+            self.reg[reg_a] = value
+
+        elif op == self.XOR:
+            value_a = self.reg[reg_a]
+            value_b = self.reg[reg_b]
+
+            string_a = str(bin(value_a))
+            string_b = str(bin(value_b))
+
+            if len(string_a) > len(string_b):
+                difference = len(string_a) - len(string_b)
+                string_b = "0b" + '1'*difference + string_b[2:]
+                string_a = "0b" + '0'*difference + string_a[2+difference:]
+            else:
+                difference = len(string_b) - len(string_a)
+                string_a = "0b" + '1'*difference + string_a[2:]
+                string_b = "0b" + '0'*difference + string_b[2+difference:]
+
+            new_string = "0b"
+
+            for i in range(2, len(string_a)):
+                if string_a[i] == string_b[i]:
+                    new_string += "0"
+                else:
+                    new_string += "1"
+
+            value = int(new_string, 2)
+
+            self.reg[reg_a] = value
+
         elif op == self.CMP:
             a = self.reg[reg_a]
             b = self.reg[reg_b]
@@ -145,7 +262,13 @@ class CPU:
             elif cmd == self.PRN:
                 reg_index = self.ram[self.pc+1]
                 value = self.reg[reg_index]
-                print(value)
+                print(bin(value))
+
+                op_size = 2
+
+            elif cmd == self.NOT:
+                reg_index = self.ram[self.pc+1]
+                self.alu(cmd, reg_index)
 
                 op_size = 2
 

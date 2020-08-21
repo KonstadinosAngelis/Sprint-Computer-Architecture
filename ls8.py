@@ -10,8 +10,9 @@ from cpu import *
 # stack = "examples/stack.ls8"
 # call = "examples/call.ls8"
 test = "sctest.ls8"
+homemade = "homemade.ls8"
 
 cpu = CPU()
 
-cpu.load(test)
+cpu.load(homemade)
 cpu.run()
